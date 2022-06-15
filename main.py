@@ -7,137 +7,106 @@ pin_R = DigitalPin.P15
 
 rightmotor = PCAmotor.Motors.M1
 leftmotor = PCAmotor.Motors.M2
-pomalej=140
-rychlej=pomalej+10
+pomalej = 140
+rychlej = pomalej + 10
 prepni = 0
 
+#vyplej prijme V; zaplej prijme S
+
 def on_bluetooth_connected():
-    global pripojeno, uartdata, prepni
+    global uartdata, pripojeno
     pripojeno = 1
+    while pripojeno == 1:
+        uartdata = bluetooth.uart_read_until(serial.delimiters(Delimiters.HASH))
+        print(uartdata)
 bluetooth.on_bluetooth_connected(on_bluetooth_connected)
-#AUTOMATICKY
-def onIn_background():
-    def on_button_pressed_a():
-        if prepni == 0:
-            prepni = 1
-            basic.show_number(prepni)
-        else:
-            prepni = 0
-            basic.show_number(prepni)
-    input.on_button_pressed(Button.A, on_button_pressed_a)
-control.in_background(onIn_background)
+def on_bluetooth_disconnected():
+    global pripojeno
+    pripojeno = 0
+bluetooth.on_bluetooth_disconnected(on_bluetooth_disconnected)
+
+# def onIn_background():
+#     global uartdata
+#     if uartdata == 'S':
+#         global prepni
+#         prepni = 1
+#         basic.show_string('S')
+#     if uartdata == 'V':
+#         global prepni
+#         prepni = 0
+#         PCAmotor.motor_run(PCAmotor.Motors.M2, 0)
+#         PCAmotor.motor_run(PCAmotor.Motors.M1, 0)
+#         basic.show_string('V')
+# control.in_background(onIn_background)
+
+def manual():
+    PCAmotor.motor_stop_all()
+    global uartdata, prepni
+    if uartdata == 'S':
+        prepni = 1
+    if uartdata == '0':
+        PCAmotor.motor_stop_all()
+    if uartdata == 'A':
+        PCAmotor.motor_run(leftmotor, 215)
+        PCAmotor.motor_run(rightmotor, 255)
+    if uartdata == "B":
+        PCAmotor.motor_run(leftmotor, -255)
+        PCAmotor.motor_run(rightmotor, -205)
+    if uartdata == "D":
+        PCAmotor.motor_run(leftmotor, 255)
+        PCAmotor.motor_run(rightmotor, 0)
+    if uartdata == "C":
+        PCAmotor.motor_run(leftmotor, 0)
+        PCAmotor.motor_run(rightmotor, 255)
+
+def funguj():
+    global prepni
+    if prepni == 1:
+        automat()
+    if prepni == 0:
+        manual()
+basic.forever(funguj)
+
 def automat():
-    if pripojeno == 0:
-        # sviti = 0; nesviti = 1
-        basic.show_icon(IconNames.HEART)
-        if prepni == 1:
-            uartdata = bluetooth.uart_read_until(serial.delimiters(Delimiters.HASH))
-            if uartdata == '0':
-                PCAmotor.motor_stop_all()
-            if uartdata == 'A':
-                PCAmotor.motor_run(PCAmotor.Motors.M2, 255)
-                PCAmotor.motor_run(PCAmotor.Motors.M1, 255)
-            if uartdata == "B":
-                PCAmotor.motor_run(PCAmotor.Motors.M2, -255)
-                PCAmotor.motor_run(PCAmotor.Motors.M1, -255)
-            if uartdata == "D":
-                PCAmotor.motor_run(PCAmotor.Motors.M2, 255)
-                PCAmotor.motor_run(PCAmotor.Motors.M1, 50)
-            if uartdata == "C":
-                PCAmotor.motor_run(PCAmotor.Motors.M2, 50)
-                PCAmotor.motor_run(PCAmotor.Motors.M1, 255)
-        if prepni == 0:
-            pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-            read_R = pins.digital_read_pin(pin_R)
-            pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-            read_L = pins.digital_read_pin(pin_L)
+    global uartdata, prepni, pomalej, rychlej
+    if uartdata == 'V':
+        prepni = 0
+        PCAmotor.motor_stop_all()
 
-            if read_R==1 and read_L==1:
-                pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-                read_R = pins.digital_read_pin(pin_R)
-                pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-                read_L = pins.digital_read_pin(pin_L)
-                PCAmotor.motor_run(leftmotor, pomalej)
-                PCAmotor.motor_run(rightmotor, rychlej)
+    pins.set_pull(pin_R, PinPullMode.PULL_NONE)
+    read_R = pins.digital_read_pin(pin_R)
+    pins.set_pull(pin_L, PinPullMode.PULL_NONE)
+    read_L = pins.digital_read_pin(pin_L)
+    if read_R==1 and read_L==1: #rovně
+        PCAmotor.motor_run(leftmotor, pomalej)
+        PCAmotor.motor_run(rightmotor, rychlej)
 
-            if read_R==0 and read_L==0:
-                pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-                read_R = pins.digital_read_pin(pin_R)
-                pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-                read_L = pins.digital_read_pin(pin_L)
-                PCAmotor.motor_run(leftmotor, pomalej)
-                PCAmotor.motor_run(rightmotor, rychlej)
+    if read_R==0 and read_L==0:
+        PCAmotor.motor_run(leftmotor, pomalej)
+        PCAmotor.motor_run(rightmotor, rychlej)
 
-            if read_L==0 and read_R==1: #doprava
-                pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-                read_R = pins.digital_read_pin(pin_R)
-                pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-                read_L = pins.digital_read_pin(pin_L)
-                PCAmotor.motor_run(leftmotor,10)
-                PCAmotor.motor_run(rightmotor,120)
+    if read_L==0 and read_R==1: #doprava
+        PCAmotor.motor_run(leftmotor,10)
+        PCAmotor.motor_run(rightmotor,120)
 
-            if read_L==1 and read_R==0: #doleva
-                pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-                read_R = pins.digital_read_pin(pin_R)
-                pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-                read_L = pins.digital_read_pin(pin_L)
-                PCAmotor.motor_run(leftmotor,120)
-                PCAmotor.motor_run(rightmotor,12)
-    #MANUALNĚ s pomocí (stejný jako automaticky ale když sníma obě černý tak zastaví a podle uartdata odbočí)
-        # else:
-        #     pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-        #     read_R = pins.digital_read_pin(pin_R)
-        #     pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-        #     read_L = pins.digital_read_pin(pin_L)
-        #     def on_bluetooth_disconnected():
-        #         global pripojeno
-        #         pripojeno = 0
-        #     bluetooth.on_bluetooth_disconnected(on_bluetooth_disconnected)
-        #     if read_R==1 and read_L==1:
-        #         pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-        #         read_R = pins.digital_read_pin(pin_R)
-        #         pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-        #         read_L = pins.digital_read_pin(pin_L)
-        #         PCAmotor.motor_run(leftmotor, rychlej)
-        #         PCAmotor.motor_run(rightmotor, pomalej)
-        
-        #     if read_R==0 and read_L==0:
-        #         pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-        #         read_R = pins.digital_read_pin(pin_R)
-        #         pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-        #         read_L = pins.digital_read_pin(pin_L)
-        #         PCAmotor.motor_stop_all()
-        #         if uartdata == '0':
-        #             pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-        #             read_R = pins.digital_read_pin(pin_R)
-        #             pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-        #             read_L = pins.digital_read_pin(pin_L)
-        #         if uartdata == "A":
-        #                 #rovně
-        #                 PCAmotor.motor_run(rightmotor, 100)
-        #                 PCAmotor.motor_run(leftmotor, 100)
-        #         if uartdata == "D":
-        #                 #doprava
-        #                 PCAmotor.motor_run(rightmotor, 0)
-        #                 PCAmotor.motor_run(leftmotor, 70)
-        #         if uartdata == "C":
-        #                 #doleva
-        #                 PCAmotor.motor_run(leftmotor, 0)
-        #                 PCAmotor.motor_run(rightmotor, 70)
-                
-        #     if read_L==0 and read_R==1: #doprava
-        #         pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-        #         read_R = pins.digital_read_pin(pin_R)
-        #         pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-        #         read_L = pins.digital_read_pin(pin_L)
-        #         PCAmotor.motor_run(leftmotor,10)
-        #         PCAmotor.motor_run(rightmotor,85)
+    if read_L==1 and read_R==0: #doleva
+        PCAmotor.motor_run(leftmotor,120)
+        PCAmotor.motor_run(rightmotor,12)
 
-        #     if read_L==1 and read_R==0: #doleva
-        #         pins.set_pull(pin_R, PinPullMode.PULL_NONE)
-        #         read_R = pins.digital_read_pin(pin_R)
-        #         pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-        #         read_L = pins.digital_read_pin(pin_L)
-        #         PCAmotor.motor_run(leftmotor,85)
-        #         PCAmotor.motor_run(rightmotor,12)
-basic.forever(automat)
+    if uartdata == 'A':
+        PCAmotor.motor_run(leftmotor, -180)
+        PCAmotor.motor_run(rightmotor, 180)
+        basic.pause(500)
+        PCAmotor.motor_stop_all()
+    if uartdata == 'C':
+        PCAmotor.motor_run(leftmotor,0)
+        PCAmotor.motor_run(rightmotor,180)
+    if uartdata == 'D':
+        PCAmotor.motor_run(leftmotor,180)
+        PCAmotor.motor_run(rightmotor,0)
+    if uartdata == '0':
+        pins.set_pull(pin_R, PinPullMode.PULL_NONE)
+        read_R = pins.digital_read_pin(pin_R)
+        pins.set_pull(pin_L, PinPullMode.PULL_NONE)
+        read_L = pins.digital_read_pin(pin_L)
+
