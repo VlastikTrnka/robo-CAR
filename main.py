@@ -8,7 +8,7 @@ pin_R = DigitalPin.P15
 rightmotor = PCAmotor.Motors.M1
 leftmotor = PCAmotor.Motors.M2
 pomalej = 140
-rychlej = pomalej + 10
+rychlej = pomalej - 12
 prepni = 0
 
 #vyplej prijme V; zaplej prijme S
@@ -85,13 +85,12 @@ def automat():
         PCAmotor.motor_run(leftmotor, pomalej)
         PCAmotor.motor_run(rightmotor, rychlej)
 
-    if read_L==0 and read_R==1: #doprava
+    if read_L==1 and read_R==0: #doprava
+        PCAmotor.motor_run(leftmotor,115)
+        PCAmotor.motor_run(rightmotor,8)
+    if read_L==0 and read_R==1: #doleva
         PCAmotor.motor_run(leftmotor,10)
-        PCAmotor.motor_run(rightmotor,120)
-
-    if read_L==1 and read_R==0: #doleva
-        PCAmotor.motor_run(leftmotor,120)
-        PCAmotor.motor_run(rightmotor,12)
+        PCAmotor.motor_run(rightmotor,115)
 
     if uartdata == 'A':
         PCAmotor.motor_run(leftmotor, -180)
@@ -102,7 +101,7 @@ def automat():
         PCAmotor.motor_run(leftmotor,0)
         PCAmotor.motor_run(rightmotor,180)
     if uartdata == 'D':
-        PCAmotor.motor_run(leftmotor,180)
+        PCAmotor.motor_run(leftmotor, 200)
         PCAmotor.motor_run(rightmotor,0)
     if uartdata == '0':
         pins.set_pull(pin_R, PinPullMode.PULL_NONE)

@@ -7,7 +7,7 @@ let pin_R = DigitalPin.P15
 let rightmotor = PCAmotor.Motors.M1
 let leftmotor = PCAmotor.Motors.M2
 let pomalej = 140
-let rychlej = pomalej + 10
+let rychlej = pomalej - 12
 let prepni = 0
 // vyplej prijme V; zaplej prijme S
 bluetooth.onBluetoothConnected(function on_bluetooth_connected() {
@@ -101,16 +101,16 @@ function automat() {
         PCAmotor.MotorRun(rightmotor, rychlej)
     }
     
-    if (read_L == 0 && read_R == 1) {
+    if (read_L == 1 && read_R == 0) {
         // doprava
-        PCAmotor.MotorRun(leftmotor, 10)
-        PCAmotor.MotorRun(rightmotor, 120)
+        PCAmotor.MotorRun(leftmotor, 115)
+        PCAmotor.MotorRun(rightmotor, 8)
     }
     
-    if (read_L == 1 && read_R == 0) {
+    if (read_L == 0 && read_R == 1) {
         // doleva
-        PCAmotor.MotorRun(leftmotor, 120)
-        PCAmotor.MotorRun(rightmotor, 12)
+        PCAmotor.MotorRun(leftmotor, 10)
+        PCAmotor.MotorRun(rightmotor, 115)
     }
     
     if (uartdata == "A") {
@@ -126,7 +126,7 @@ function automat() {
     }
     
     if (uartdata == "D") {
-        PCAmotor.MotorRun(leftmotor, 180)
+        PCAmotor.MotorRun(leftmotor, 200)
         PCAmotor.MotorRun(rightmotor, 0)
     }
     
